@@ -3,10 +3,10 @@
  * the client apply attaches the locale service (`ctx.locale`, provided by
  * `@deepseek-ai/dsh-client-locale`) through {@link attachLocale}, and
  * `t()`/`isZh()` resolve the active locale from it — the Host-backed
- * `locale.preference` wins over the raw browser language and switches live.
- * Without an attached service (standalone/test compositions) the browser
- * language is used, matching the previous behavior. The dictionaries are
- * also registered into the DSH locale registry under {@link LOCALE_NS}.
+ * `locale.preference` is authoritative and switches live. Without an attached
+ * service (standalone/test compositions), English is the deterministic default.
+ * The dictionaries are also registered into the DSH locale registry under
+ * {@link LOCALE_NS}.
  */
 
 /** The zh dictionary (also registered into the DSH locale registry under {@link LOCALE_NS}). */
@@ -627,7 +627,7 @@ export const en: Record<keyof typeof zh, string> = {
  */
 export const LOCALE_NS = 'betterSidebar'
 
-/** The DSH locale service attached by the client apply (absent → browser detection). */
+/** The DSH locale service attached by the client apply (absent → English). */
 let localeService: { getSnapshot(): { active: string } } | undefined
 
 /**
@@ -643,12 +643,10 @@ export function attachLocale(service: { getSnapshot(): { active: string } } | un
 
 /**
  * The active locale id ('zh' | 'en'): the DSH locale service's snapshot when
- * attached, else the browser language.
+ * attached, otherwise English.
  */
 function activeLocale(): string {
-  return localeService?.getSnapshot().active
-    ?? (typeof navigator !== 'undefined' ? navigator.language : '')
-    ?? 'en'
+  return localeService?.getSnapshot().active ?? 'en'
 }
 
 /** Translate a copy key in the active locale (zh → zh, else en). */

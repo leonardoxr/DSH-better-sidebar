@@ -1,8 +1,8 @@
 /**
  * Locale-following spec: the sidebar copy follows the DSH locale service
  * (`ctx.locale`, provided by @deepseek-ai/dsh-client-locale) when attached
- * through `attachLocale`, and falls back to the browser language otherwise.
- * Covers attach/detach, live switching, dictionary parity, and placeholder
+ * through `attachLocale`, and defaults to English otherwise. Covers
+ * attach/detach, live switching, dictionary parity, and placeholder
  * interpolation.
  */
 import { afterEach, describe, expect, it } from 'vitest'
@@ -25,37 +25,21 @@ class FakeLocale {
   }
 }
 
-/** Point the browser-language fallback at a specific language (undefined = none). */
-function stubNavigatorLanguage(lang: string | undefined): void {
-  Object.defineProperty(globalThis, 'navigator', {
-    value: lang === undefined ? undefined : { language: lang },
-    configurable: true,
-  })
-}
-
 afterEach(() => {
   attachLocale(undefined)
-  stubNavigatorLanguage(undefined)
 })
 
 describe('locales (DSH i18n following)', () => {
-  it('falls back to the browser language without an attached service', () => {
-    stubNavigatorLanguage('en-US')
-    expect(t('explorer')).toBe('Explorer')
-    expect(isZh()).toBe(false)
-
-    stubNavigatorLanguage('zh-CN')
-    expect(t('explorer')).toBe('资源管理器')
-    expect(isZh()).toBe(true)
-  })
-
-  it('defaults to English when no locale service and no browser language are available', () => {
+  it('defaults to English without an attached locale service', () => {
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { language: 'zh-CN' },
+      configurable: true,
+    })
     expect(t('explorer')).toBe('Explorer')
     expect(isZh()).toBe(false)
   })
 
-  it('follows the attached locale service instead of the browser language', () => {
-    stubNavigatorLanguage('en-US')
+  it('follows the attached locale service instead of the English default', () => {
     const locale = new FakeLocale()
     attachLocale(locale)
 
@@ -63,20 +47,18 @@ describe('locales (DSH i18n following)', () => {
     expect(t('git')).toBe('源代码管理')
     expect(isZh()).toBe(true)
 
-    // Live switch: the service's active locale wins even though the
-    // browser still asks for en-US.
+    // Live switches from the service remain authoritative.
     locale.switchTo('en')
     expect(t('git')).toBe('Source Control')
     expect(isZh()).toBe(false)
   })
 
-  it('detaches back to the browser-language fallback', () => {
+  it('detaches back to the English default', () => {
     const locale = new FakeLocale()
     locale.switchTo('zh')
     attachLocale(locale)
     expect(t('terminal')).toBe('终端')
 
-    stubNavigatorLanguage('en-US')
     attachLocale(undefined)
     expect(t('terminal')).toBe('Terminal')
   })
