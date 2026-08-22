@@ -403,8 +403,10 @@ The dashed cards at the end of the "Sidebar content" / "File viewers" grids in t
 
 ```sh
 pnpm install      # @deepseek-ai/* devDependencies resolve to 0.1.1-rc.1 (published) — no token needed
+pnpm check:style  # ESLint correctness + low-churn formatting gate
 pnpm typecheck    # tsc --noEmit
 pnpm build        # → lib/index.js + lib/invariant.js + lib/client.js + lib/client-registry.js + lib/types
+pnpm check:consumer-types  # browser-only public declaration check (build first)
 pnpm test         # vitest (includes manifest consistency guard; build first)
 pnpm watch        # tsdown --watch
 ```
@@ -434,7 +436,7 @@ Windows / Linux / macOS (macOS validated daily; the rest covered by unit tests);
 
 - **Code changes go through PRs**: develop on a `feat/*` / `fix/*` branch, then `gh pr create`; docs-only changes may be pushed to main directly
 - **Curate an ecosystem plugin**: tag your repo with `dsh-better-sidebar` + PR a `PluginEntry` into [`src/client/plugins-tabs.ts`](./src/client/plugins-tabs.ts) / [`plugins-viewers.ts`](./src/client/plugins-viewers.ts)
-- **Before submitting**: `pnpm typecheck && pnpm build && pnpm test` (CI additionally gates on npm-pack → real-mount → headless-render via `pnpm test:mount`)
+- **Before submitting**: `pnpm check:style && pnpm typecheck && pnpm build && pnpm check:consumer-types && pnpm test` (CI additionally gates on npm-pack → real-mount → headless-render via `pnpm test:mount`)
 - See [`AGENTS.md`](./AGENTS.md) for the repository rules (hard constraints, CI lanes, release flow)
 
 ## ⭐ Star History

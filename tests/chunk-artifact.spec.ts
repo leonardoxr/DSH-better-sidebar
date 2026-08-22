@@ -27,7 +27,6 @@ describe('built chunk artifacts', () => {
     if (typeof g.removeEventListener !== 'function') g.removeEventListener = () => {}
     for (const name of CHUNKS) {
       const code = readFileSync(`lib/client-${name}.js`, 'utf8')
-      // eslint-disable-next-line no-new-func
       expect(() => new Function(code)(), name).not.toThrow()
       const registry = g.__dshChunks__ as Record<string, unknown>
       expect(typeof registry[name], name).toBe('function')

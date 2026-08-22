@@ -378,7 +378,6 @@ export function SideChatView(props: {
       }
     }
     return items
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threads])
 
   const growComposer = (): void => {

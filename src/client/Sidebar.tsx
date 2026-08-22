@@ -857,7 +857,6 @@ export function Sidebar(props: { ctx: Context; store: SidebarStore }) {
     else document.body.removeAttribute('data-dsh-sidebar-dragging')
   }, [anyDragging])
 
-
   const actions: WorkbenchActions = useMemo(() => ({
     closeTab: (paneId, tabId) => {
       // A closed terminal releases its pty immediately — including when its
@@ -1072,13 +1071,13 @@ export function Sidebar(props: { ctx: Context; store: SidebarStore }) {
           // and unaffected.
           bottom: narrow && keyboardInset > 0 ? `${keyboardInset}px` : undefined,
         }}
-       
+
         data-dragging={anyDragging || undefined}
       >
           {!narrow && (
             <div
               className={clsx(css.panelResize, draggingWidth && css.panelResizeActive)}
-             
+
               onPointerDown={(event) => {
                 event.preventDefault()
                 event.currentTarget.setPointerCapture(event.pointerId)
@@ -1217,12 +1216,12 @@ export function Sidebar(props: { ctx: Context; store: SidebarStore }) {
           // geometry would flash full-width overflow instead).
           visibility: centerRect.right > 0 ? undefined : 'hidden',
         }}
-       
+
         data-dragging={(draggingBottom || draggingCorner) || undefined}
       >
         <div
           className={clsx(css.bottomResize, draggingBottom && css.bottomResizeActive)}
-         
+
           onPointerDown={(event) => {
             event.preventDefault()
             event.currentTarget.setPointerCapture(event.pointerId)

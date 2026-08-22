@@ -66,6 +66,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint JavaScript and TypeScript
+        run: pnpm check:style
+
       - name: Verify release tag matches package.json version
         if: github.event_name == 'release'
         env:

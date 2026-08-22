@@ -51,12 +51,12 @@ export function apply(ctx: Context): void {
   // (and switch live — the Sidebar root subscribes to it), and register the
   // plugin's dictionaries into the shared locale registry. The disposers
   // run on fiber disposal, so re-activation (HMR) re-registers cleanly.
-  attachLocale(ctx.locale)
   ctx.effect(() => {
+    const detachLocale = attachLocale(ctx.locale)
     const offZh = ctx.locale.register(LOCALE_NS, 'zh', zh)
     const offEn = ctx.locale.register(LOCALE_NS, 'en', en)
-    return () => { offZh(); offEn() }
-  }, 'dsh-better-sidebar: dictionaries')
+    return () => { offZh(); offEn(); detachLocale() }
+  }, 'dsh-better-sidebar: locale attachment and dictionaries')
   // One store instance per activation: production code creates it only here,
   // then hands it to the mounted panel and closes over it in the slot
   // registrations (the official createXXXStore() factory rule — no
