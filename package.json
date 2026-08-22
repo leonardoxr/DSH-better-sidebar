@@ -68,11 +68,12 @@
     "scripts/install.ps1",
     "cordis.patch.yml",
     "README.md",
-    "README_EN.md",
+    "README_ZH.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc -p tsconfig.build.json && tsdown",
+    "clean": "node -e \"require('node:fs').rmSync('lib', { recursive: true, force: true })\"",
+    "build": "pnpm clean && tsc -p tsconfig.build.json && tsdown",
     "prepublishOnly": "pnpm build",
     "typecheck": "tsc --noEmit",
     "bundle": "tsdown",

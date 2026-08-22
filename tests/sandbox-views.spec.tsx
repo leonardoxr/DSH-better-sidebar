@@ -7,7 +7,7 @@
  * sandbox per-feature (warned); those paths render the warning bar and no
  * sandbox attribute.
  */
-import { describe, expect, it, beforeEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renderToString } from 'react-dom/server'
 import { createElement } from 'react'
 import './browser-globals.ts'
@@ -16,13 +16,17 @@ import { TextEditor, HTML_IFRAME_SANDBOX } from '../src/client/TextEditor.tsx'
 import { BrowserView, BrowserEmbedBlocked, BROWSER_IFRAME_SANDBOX } from '../src/client/BrowserView.tsx'
 import { createSidebarStore } from '../src/client/state.ts'
 import type { FileViewerProps } from '../src/client/service.ts'
+import { attachLocale } from '../src/client/locales.ts'
 
 const CTX = {} as Context
 
-// The copy assertions below pin the zh strings: force the zh locale (the
-// test environment's navigator may be the real Node one with an en locale).
+// The copy assertions below pin zh through the same locale-service seam used in DSH.
 beforeEach(() => {
-  Object.defineProperty(globalThis.navigator, 'language', { value: 'zh-CN', configurable: true })
+  attachLocale({ getSnapshot: () => ({ active: 'zh' }) })
+})
+
+afterEach(() => {
+  attachLocale(undefined)
 })
 
 function viewerProps(store: ReturnType<typeof createSidebarStore>, overrides: Partial<FileViewerProps> = {}): FileViewerProps {

@@ -11,6 +11,7 @@ import { createElement, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { act } from 'react-dom/test-utils'
 import { SubagentView } from '../src/client/SubagentView.tsx'
+import { attachLocale } from '../src/client/locales.ts'
 import type { Context, SidebarSessionList } from '../src/context-types.ts'
 
 /** A subscribable sessions-list snapshot (mirror of the runtime list feed). */
@@ -118,10 +119,11 @@ beforeEach(() => {
     }
     throw new Error(`unexpected fetch ${String(url)}`)
   })
-  Object.defineProperty(globalThis.navigator, 'language', { value: 'zh-CN', configurable: true })
+  attachLocale({ getSnapshot: () => ({ active: 'zh' }) })
 })
 
 afterEach(() => {
+  attachLocale(undefined)
   vi.unstubAllGlobals()
   for (const el of document.querySelectorAll('body > div')) el.remove()
 })
