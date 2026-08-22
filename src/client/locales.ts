@@ -627,18 +627,32 @@ export const en: Record<keyof typeof zh, string> = {
  */
 export const LOCALE_NS = 'betterSidebar'
 
-/** The DSH locale service attached by the client apply (absent → English). */
-let localeService: { getSnapshot(): { active: string } } | undefined
+interface LocaleSnapshotService {
+  getSnapshot(): { active: string }
+}
+
+/** The current DSH locale attachment (absent → English). */
+let localeAttachment: { service: LocaleSnapshotService; token: object } | undefined
 
 /**
- * Attach (or detach, with undefined) the DSH locale service. The sidebar
- * mounts its own React root outside the slot system's locale seat, so the
- * service rides this module-level holder: components keep calling the plain
- * `t()` function, and the Sidebar root's locale subscription re-renders the
- * whole tree on switches.
+ * Attach (or explicitly clear, with undefined) the DSH locale service. The
+ * returned disposer clears only its own attachment generation, so a stale HMR
+ * fiber cannot detach a newer activation that reuses the same service object.
+ * The sidebar mounts its own React root outside the slot system's locale seat,
+ * so components keep calling the plain `t()` function while the Sidebar root
+ * subscribes to locale changes and re-renders the whole tree.
  */
-export function attachLocale(service: { getSnapshot(): { active: string } } | undefined): void {
-  localeService = service
+export function attachLocale(service: LocaleSnapshotService | undefined): () => void {
+  if (service === undefined) {
+    localeAttachment = undefined
+    return () => {}
+  }
+
+  const token = {}
+  localeAttachment = { service, token }
+  return () => {
+    if (localeAttachment?.token === token) localeAttachment = undefined
+  }
 }
 
 /**
@@ -646,7 +660,7 @@ export function attachLocale(service: { getSnapshot(): { active: string } } | un
  * attached, otherwise English.
  */
 function activeLocale(): string {
-  return localeService?.getSnapshot().active ?? 'en'
+  return localeAttachment?.service.getSnapshot().active ?? 'en'
 }
 
 /** Translate a copy key in the active locale (zh → zh, else en). */

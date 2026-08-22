@@ -56,10 +56,23 @@ describe('locales (DSH i18n following)', () => {
   it('detaches back to the English default', () => {
     const locale = new FakeLocale()
     locale.switchTo('zh')
-    attachLocale(locale)
+    const detach = attachLocale(locale)
     expect(t('terminal')).toBe('终端')
 
-    attachLocale(undefined)
+    detach()
+    expect(t('terminal')).toBe('Terminal')
+  })
+
+  it('does not let a stale HMR disposer clear a newer attachment', () => {
+    const locale = new FakeLocale()
+    locale.switchTo('zh')
+    const detachOld = attachLocale(locale)
+    const detachCurrent = attachLocale(locale)
+
+    detachOld()
+    expect(t('terminal')).toBe('终端')
+
+    detachCurrent()
     expect(t('terminal')).toBe('Terminal')
   })
 

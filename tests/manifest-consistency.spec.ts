@@ -4,6 +4,7 @@
  * cannot drift into an uninstallable / uneable state:
  * - `id` passes the registry's strict two-segment validation (native form),
  * - `version` stays in sync with package.json,
+ * - the DSH engine floor matches the package's supported peer baseline,
  * - the manifest entry files exist in the build output,
  * - the registry client bundle registers exactly the manifest id (the
  *   browser-side `arrive()` contract), and the official client bundle keeps
@@ -34,6 +35,7 @@ interface PluginManifest {
 interface PackageJson {
   name: string
   version: string
+  peerDependencies: Record<string, string>
 }
 
 const manifest = JSON.parse(readFileSync(resolve(ROOT, 'dsh.plugin.json'), 'utf8')) as PluginManifest
@@ -80,6 +82,15 @@ describe('registry manifest consistency (dsh.plugin.json)', () => {
 
   it('version matches package.json', () => {
     expect(manifest.version).toBe(pkg.version)
+  })
+
+  it('DSH engine floor matches the supported peer baseline', () => {
+    expect(manifest.engines?.dsh).toBe('>=0.1.0-rc.8')
+    const dshPeerRanges = Object.entries(pkg.peerDependencies)
+      .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
+      .map(([, range]) => range)
+    expect(dshPeerRanges.length).toBeGreaterThan(0)
+    expect(new Set(dshPeerRanges)).toEqual(new Set(['^0.1.0-rc.8']))
   })
 
   it('main and client.main exist in the build output', () => {

@@ -28,7 +28,7 @@ better-sidebar 从 v0.4.0 起暴露 `ctx.betterSidebar` 服务（Cordis context 
 `.github/workflows/release.yml` 在 GitHub Release 发布（tag `vX.Y.Z`）时自动发版到 npm：
 
 1. **发版前置**：`package.json` 版本号 bump 到 `X.Y.Z`（manifest 一致性守卫会校验其它副本），CI 全绿后打 tag `vX.Y.Z` 并发布 GitHub Release。tag 必须与 package.json 版本一致——workflow 在发布前校验，不匹配直接失败、不发版。
-2. **流程**：workflow 依次执行 `pnpm build` / `pnpm typecheck` / `pnpm test`，校验 tag，然后 `pnpm publish --provenance --access public`（`prepublishOnly` 会重建产物；产物带 provenance 签名）。
+2. **流程**：workflow 依次执行 `pnpm check:style` / `pnpm build` / `pnpm typecheck` / `pnpm test`，校验 tag，然后 `pnpm publish --provenance --access public`（`prepublishOnly` 会重建产物；产物带 provenance 签名）。
 3. **认证**：走 npm **Trusted Publishing（OIDC）**，不需要也不应配置 `NPM_TOKEN` secret。一次性手动配置（在 npmjs.com 完成）：package `dsh-better-sidebar` → Settings → Publishing access → Trusted Publishers → Add Trusted Publisher，字段为 Provider `GitHub Actions`、Organization `omdsh-dev`、Repository `DSH-better-sidebar`、**Workflow filename `release.yml`**、Environment 留空。未配置前发布会失败（OIDC 交换报错），配置后无需改 workflow。
 4. **调试**：`workflow_dispatch` 手动触发 + `dry_run=true` 只打包验证、不发版。
 
@@ -115,7 +115,7 @@ import type {
 } from 'dsh-better-sidebar/client/service'
 ```
 
-> 💡 **类型合并触发路径**：`import type {} from 'dsh-better-sidebar/client/service'` 同样会加载 `Context` 的 augmentation（`declare module 'cordis'` 在 context-types.d.ts 中，service 声明会拉入它）——纯浏览器侧插件建议走 `client/service` 路径，避免拉进宿主半的 Node 类型图（主入口 `dsh-better-sidebar` 的声明面含宿主代码，宿主消费者本就处于 Node 环境）。client 可达声明图（`client/*` + context-types + html-route + prefs-shared）自 v0.12.0 起**零 Node 依赖**（`scripts/check-consumer-types.sh` 守护），无 `@types/node`、`skipLibCheck: false` 也能编译。
+> 💡 **类型合并触发路径**：`import type {} from 'dsh-better-sidebar/client/service'` 同样会加载 `Context` 的 augmentation（`declare module 'cordis'` 在 context-types.d.ts 中，service 声明会拉入它）——纯浏览器侧插件建议走 `client/service` 路径，避免拉进宿主半的 Node 类型图（主入口 `dsh-better-sidebar` 的声明面含宿主代码，宿主消费者本就处于 Node 环境）。client 可达声明图（`client/*` + context-types + html-route + prefs-shared）自 v0.12.0 起**零 Node 依赖**（`scripts/check-consumer-types.mjs` 守护），无 `@types/node`、`skipLibCheck: false` 也能编译。
 
 ---
 
@@ -593,7 +593,7 @@ interface OpenTabSeed {
 | **portal 限制** | 整面板 slot 由 ui-layout 独占，外部 tab 只能进入 better-sidebar 的 portal 内部，无法全屏替换 |
 | **id 冲突** | `registerTab` / `registerFileViewer` 对重复 id 抛错；建议用包前缀（`my-plugin:xxx`） |
 | **家族右面板互斥（v0.13.0+）** | 读取 `aionui-panel` 设置命名空间的 `rightPanel`：解析为 `'aionui-panel'` 时整个侧边栏不挂载（`settings.get` 路由返回 `externalDisable: true`，客户端挂载门 + 各类接管一并停用；`settings/document-updated` 推送实时生效，无 `remote` 服务的部署回退为启动时判定）。未安装 aionui 或提供方为其他值时不受影响 |
-| **i18n 跟随** | 侧边栏界面文案跟随 DSH 的 `ctx.locale`（`@deepseek-ai/dsh-client-locale`）：词典注册在 `betterSidebar` 命名空间，语言偏好（Host-backed `locale.preference`）与浏览器语言不一致时以 DSH 为准并实时切换；locale 服务缺失时回退浏览器语言。插件自身的 `t()`（`src/client/locales.ts`）由 `apply()` 挂接服务；消费插件**不要**依赖此内部函数——标题等字段传字符串或 `() => string` 即可（i18n 友好）。⚠️ 渲染 DSH 的 `MarkdownText` 时必须传 `codeLabels={{ copyLabel: t('copy'), copiedLabel: t('copied') }}`——该组件 cordis-free，漏传则代码块复制按钮回退硬编码中文 |
+| **i18n 跟随** | 侧边栏界面文案跟随 DSH 的 `ctx.locale`（`@deepseek-ai/dsh-client-locale`）：词典注册在 `betterSidebar` 命名空间，语言偏好（Host-backed `locale.preference`）与浏览器语言不一致时以 DSH 为准并实时切换；locale 服务缺失时确定性回退英文。插件自身的 `t()`（`src/client/locales.ts`）由 `apply()` 挂接服务；消费插件**不要**依赖此内部函数——标题等字段传字符串或 `() => string` 即可（i18n 友好）。⚠️ 渲染 DSH 的 `MarkdownText` 时必须传 `codeLabels={{ copyLabel: t('copy'), copiedLabel: t('copied') }}`——该组件 cordis-free，漏传则代码块复制按钮回退硬编码中文 |
 | **懒加载 chunk** | 内置重依赖（xterm/CodeMirror）在独立 bundle（`lib/client-<name>.js`）中，经 `/sidebar/bundle` 路由按需下发；每个脚本把 factory 赋到插件自有全局注册表 `globalThis.__dshChunks__[<name>]`，由 `src/client/chunk-loader.ts` 用自定义 require（externals 经 `__DSH_MODULES__` seed 分支解析）物化——**不经过** `__ModuleLoader__` 注册；**核心 bundle 禁止静态 import `src/client/chunks/*`**（会把库拖回启动路径）；对消费插件透明——懒加载只作用于内置 descriptor，`component` 契约（`(props) => ReactNode` 纯渲染函数）不变 |
 
 ---

@@ -15,7 +15,7 @@ import { randomUUID } from 'node:crypto'
 import { once } from 'node:events'
 import { createWriteStream } from 'node:fs'
 import { mkdir, rename, rm, stat } from 'node:fs/promises'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, join, normalize } from 'node:path'
 import type { SidebarHttpRequest } from './context-types.ts'
 import { isWithin, requireAbsolute } from './fs-tree.ts'
 import { SidebarError } from './wire.ts'
@@ -32,6 +32,26 @@ export interface WorkspaceUploadInput {
   chunks: AsyncIterable<string | Uint8Array>
   /** Byte cap; an oversized upload is refused without touching the target. */
   limit: number
+}
+
+/** Per-target commit tails: streams stay concurrent, final renames do not race on Windows. */
+const uploadCommitTails = new Map<string, Promise<void>>()
+
+async function withUploadCommit<T>(target: string, commit: () => Promise<T>): Promise<T> {
+  const normalized = normalize(target)
+  const key = process.platform === 'win32' ? normalized.toLowerCase() : normalized
+  const previous = uploadCommitTails.get(key) ?? Promise.resolve()
+  let release: () => void = () => {}
+  const current = new Promise<void>(resolve => { release = resolve })
+  const tail = previous.then(() => current)
+  uploadCommitTails.set(key, tail)
+  await previous
+  try {
+    return await commit()
+  } finally {
+    release()
+    if (uploadCommitTails.get(key) === tail) uploadCommitTails.delete(key)
+  }
 }
 
 /**
@@ -85,8 +105,10 @@ export async function writeWorkspaceUpload(input: WorkspaceUploadInput): Promise
       stream.end((error?: Error | null) => (error === undefined || error === null ? resolve() : reject(error)))
     })
     if (streamError !== undefined) throw streamError
-    await rename(tmp, target)
-    const info = await stat(target)
+    const info = await withUploadCommit(target, async () => {
+      await rename(tmp, target)
+      return stat(target)
+    })
     return { path: target, size: info.size }
   } catch (error) {
     // Wait for the stream to fully close before unlinking (Windows locks open

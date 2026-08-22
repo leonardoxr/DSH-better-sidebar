@@ -74,6 +74,10 @@
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('lib', { recursive: true, force: true })\"",
     "build": "pnpm clean && tsc -p tsconfig.build.json && tsdown",
+    "check:style": "eslint . --max-warnings 26",
+    "lint": "pnpm check:style",
+    "format:check": "pnpm check:style",
+    "format": "eslint . --fix",
     "prepublishOnly": "pnpm build",
     "typecheck": "tsc --noEmit",
     "bundle": "tsdown",
@@ -81,7 +85,7 @@
     "prepare": "tsdown",
     "test": "vitest run",
     "test:mount": "bash scripts/e2e-mount.sh",
-    "check:consumer-types": "bash scripts/check-consumer-types.sh"
+    "check:consumer-types": "node scripts/check-consumer-types.mjs"
   },
   "license": "MIT",
   "peerDependencies": {
@@ -154,7 +158,9 @@
     "@deepseek-ai/dsh-settings": "0.1.1-rc.1",
     "@deepseek-ai/dsh-subagent": "0.1.1-rc.1",
     "@deepseek-ai/dsh-tools": "0.1.1-rc.1",
+    "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^24.0.0",
     "@types/react": "~18.3.1",
     "@types/react-dom": "~18.3.1",
@@ -162,12 +168,16 @@
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^5.5.0",
     "cordis": "^4.0.0-rc.8",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.5.0",
     "jsdom": "^29.1.1",
     "lightningcss": "^1.32.0",
     "react": "^18.2.0",
     "react-dom": "18.2.0",
     "tsdown": "^0.22.2",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.8"
   }
 }

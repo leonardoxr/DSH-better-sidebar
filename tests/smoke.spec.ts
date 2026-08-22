@@ -261,9 +261,9 @@ describe('host plugin smoke', () => {
  * Destructive git operations (discard / revert / cherry-pick) run against a
  * throwaway repository under the OS temp dir — never the plugin repo. The
  * fixture's commit identity comes from the GIT_AUTHOR / GIT_COMMITTER
- * environment variables, confined to the fixture process: no git config is
- * touched anywhere (the plugin never sets an identity, and neither does its
- * test fixture).
+ * environment variables, confined to the fixture process. Each scratch repo
+ * pins core.autocrlf=false locally so production Git commands under test see
+ * deterministic LF content regardless of the machine's global Git config.
  */
 describe('git destructive operations (scratch repository)', () => {
   const FIXTURE_IDENTITY = {
@@ -274,7 +274,13 @@ describe('git destructive operations (scratch repository)', () => {
   }
 
   const gitRun = (cwd: string, args: string[]): string => {
-    const result = spawnSync('git', ['-C', cwd, '--no-pager', '-c', 'color.ui=false', ...args], {
+    const result = spawnSync('git', [
+      '-C', cwd,
+      '--no-pager',
+      '-c', 'color.ui=false',
+      '-c', 'core.autocrlf=false',
+      ...args,
+    ], {
       encoding: 'utf8',
       env: { ...process.env, ...FIXTURE_IDENTITY },
     })
@@ -288,6 +294,7 @@ describe('git destructive operations (scratch repository)', () => {
   const makeScratchRepo = (): string => {
     const dir = mkdtempSync(join(tmpdir(), 'dsh-sidebar-git-'))
     gitRun(dir, ['init', '-q'])
+    gitRun(dir, ['config', 'core.autocrlf', 'false'])
     gitRun(dir, ['checkout', '-q', '-b', 'main'])
     writeFileSync(join(dir, 'a.txt'), 'one\ntwo\nthree\n')
     gitRun(dir, ['add', '-A'])
@@ -721,7 +728,6 @@ describe('side card settings routes', () => {
   })
 })
 
-
 describe('agent terminal tool gating', () => {
   it('injects the eight tools only when the side-card setting is enabled (default off)', () => {
     let registered = 0
@@ -781,6 +787,5 @@ describe('agent terminal tool gating', () => {
     expect(live()).toBe(8)
     expect(registered).toBe(16)
   })
-
 
 })

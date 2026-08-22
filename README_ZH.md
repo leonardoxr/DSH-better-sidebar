@@ -403,8 +403,10 @@ GitHub topic [`dsh-better-sidebar`](https://github.com/topics/dsh-better-sidebar
 
 ```sh
 pnpm install      # @deepseek-ai/* devDependencies 已发布 0.1.1-rc.1，直接解析、无需令牌
+pnpm check:style  # ESLint 正确性 + 低扰动格式门禁
 pnpm typecheck    # tsc --noEmit
 pnpm build        # → lib/index.js + lib/invariant.js + lib/client.js + lib/client-registry.js + lib/types
+pnpm check:consumer-types  # 浏览器消费者公开声明检查（需先 build）
 pnpm test         # vitest（含 manifest 一致性守卫，需先 build）
 pnpm watch        # tsdown --watch
 ```
@@ -434,7 +436,7 @@ Windows / Linux / macOS 三平台适配（macOS 日常验证；其余经单元�
 
 - **代码改动走 PR**：`feat/*` / `fix/*` 分支开发 → `gh pr create`；纯文档改动可直接推 main
 - **收录生态插件**：给仓库打 `dsh-better-sidebar` topic + 向 [`src/client/plugins-tabs.ts`](./src/client/plugins-tabs.ts) / [`plugins-viewers.ts`](./src/client/plugins-viewers.ts) 提 PR
-- **提交前自检**：`pnpm typecheck && pnpm build && pnpm test`（CI 另有 npm 打包 → 真实挂载 → 无头渲染门禁 `pnpm test:mount`）
+- **提交前自检**：`pnpm check:style && pnpm typecheck && pnpm build && pnpm check:consumer-types && pnpm test`（CI 另有 npm 打包 → 真实挂载 → 无头渲染门禁 `pnpm test:mount`）
 - 仓库工作规范见 [`AGENTS.md`](./AGENTS.md)（含仓库硬约束与 CI 说明）
 
 ## ⭐ Star History

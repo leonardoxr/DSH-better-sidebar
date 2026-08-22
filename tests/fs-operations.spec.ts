@@ -114,13 +114,22 @@ describe('writeWorkspaceUpload', () => {
 
   it('keeps concurrent uploads to the same target independent', async () => {
     const target = join(root, 'race.txt')
+    const payloads = Array.from({ length: 16 }, (_, index) => `payload-${index}`)
+    await Promise.all(payloads.map(payload => writeWorkspaceUpload({
+      cwd: root, dir: root, relativePath: 'race.txt', chunks: chunksOf(payload), limit: 1024,
+    })))
+    // Every unique temp commits cleanly; the last queued rename wins.
+    expect(payloads).toContain(readFileSync(target, 'utf8'))
+    expect(tmpLeftovers(root)).toEqual([])
+  })
+
+  it.runIf(process.platform === 'win32')('serializes case-variant aliases of one Windows target', async () => {
+    const payloads = ['upper', 'lower']
     await Promise.all([
-      writeWorkspaceUpload({ cwd: root, dir: root, relativePath: 'race.txt', chunks: chunksOf('first'), limit: 1024 }),
-      writeWorkspaceUpload({ cwd: root, dir: root, relativePath: 'race.txt', chunks: chunksOf('second'), limit: 1024 }),
+      writeWorkspaceUpload({ cwd: root, dir: root, relativePath: 'CaseRace.txt', chunks: chunksOf(payloads[0]!), limit: 1024 }),
+      writeWorkspaceUpload({ cwd: root, dir: root, relativePath: 'caserace.txt', chunks: chunksOf(payloads[1]!), limit: 1024 }),
     ])
-    // Both renames succeed (unique temp names, no EEXIST cross-talk); the last
-    // rename wins and the losers leave nothing behind.
-    expect(['first', 'second']).toContain(readFileSync(target, 'utf8'))
+    expect(payloads).toContain(readFileSync(join(root, 'CaseRace.txt'), 'utf8'))
     expect(tmpLeftovers(root)).toEqual([])
   })
 
