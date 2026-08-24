@@ -1,6 +1,6 @@
 {
   "id": "dsh-external/dsh-better-sidebar",
-  "version": "0.15.0",
+  "version": "0.15.3",
   "main": "./lib/index.js",
   "description": "VSCode-style sidebar with session-isolated files, editor, terminal, Git, browser, and extension APIs for tabs and file viewers.",
   "engines": {
